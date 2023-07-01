@@ -1,7 +1,7 @@
 #[derive(Component, Copy, Drop, Serde)]
 struct Adventurer {
     Health: u8,
-    level: u8,
+    Level: u8,
     // Physical
     Strength: u8,
     Dexterity: u8,
