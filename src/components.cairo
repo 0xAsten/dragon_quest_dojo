@@ -1,3 +1,3 @@
 mod game;
-mod player;
+mod adventurers;
 mod monsters;
