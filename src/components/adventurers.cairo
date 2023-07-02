@@ -1,13 +1,13 @@
 #[derive(Component, Copy, Drop, Serde)]
 struct Adventurer {
-    health: u8,
-    level: u8,
+    health: u32,
+    level: u32,
     // Physical
-    strength: u8,
-    dexterity: u8,
-// vitality: u8,
+    strength: u32,
+    dexterity: u32,
+// vitality: u32,
 // Mental
-// intelligence: u8,
-// wisdom: u8,
-// charisma: u8,
+// intelligence: u32,
+// wisdom: u32,
+// charisma: u32,
 }

@@ -79,9 +79,9 @@ mod Adventuring {
     struct Attacked {
         attacker: felt252,
         defender: felt252,
-        damage: u8,
-        attackerHealth: u8,
-        defenderHealth: u8,
+        damage: u32,
+        attackerHealth: u32,
+        defenderHealth: u32,
     }
 
     #[derive(Drop, Serde)]
@@ -99,7 +99,15 @@ mod Adventuring {
         let game = get !(ctx, game_sk, Game);
 
         // game condition checking
-        assert(game.winner == 0, 'game already over or not start');
+        // assert(game.winner == 0, 'game already over or not start');
+
+        set !(
+            ctx,
+            game_sk,
+            (Game {
+                adventurer: adventurer_id, dragon: 0, winner: 2
+            })
+        )
 
         let adventurer_sk: Query = (game_id, adventurer_id).into();
         let adventurer = get !(ctx, adventurer_sk, Adventurer);
@@ -108,9 +116,9 @@ mod Adventuring {
         let dragon = get !(ctx, dragon_sk, Dragon);
 
         // pseudorandom number generator seed, use VRF for seed in the future
-        let seed = starknet::get_tx_info().unbox().transaction_hash;
+        // let seed = starknet::get_tx_info().unbox().transaction_hash;
 
-        let winner = attack(ctx, game_id, adventurer, dragon, adventurer.health, dragon.health);
+        let winner = attack(ctx, adventurer, dragon, adventurer.health, dragon.health);
 
         let mut values = array::ArrayTrait::new();
         serde::Serde::serialize(
@@ -120,9 +128,9 @@ mod Adventuring {
 
         set !(
             ctx,
-            game_id.into(),
-            (GameOver {
-                game_id: game_id, winner: winner
+            game_sk,
+            (Game {
+                adventurer: adventurer_id, dragon: 0, winner: 1
             })
         )
         
@@ -130,24 +138,22 @@ mod Adventuring {
 
     fn attack(
         ctx: Context,
-        game_id: u32,
         adventurer: Adventurer,
         dragon: Dragon,
-        adventurerHealth: u8,
-        dragonHealth: u8,
+        adventurerHealth: u32,
+        dragonHealth: u32,
     ) -> felt252 {
-        if adventurerHealth <= 0_u8 {
+        if adventurerHealth <= 10000_u32 {
             return DRAGON;
         };
 
-        if dragonHealth <= 0_u8 {
+        if dragonHealth <= 10000_u32 {
            return ADVENTURER;
         };
 
         // attack
         let (adventurerHealth, dragonHealth) = attack_action(
             ctx,
-            game_id,
             ADVENTURER,
             DRAGON,
             adventurer.strength,
@@ -161,7 +167,6 @@ mod Adventuring {
         // defend
         let (dragonHealth, adventurerHealth) = attack_action(
             ctx,
-            game_id,
             DRAGON,
             ADVENTURER,
             dragon.strength,
@@ -172,25 +177,24 @@ mod Adventuring {
             adventurerHealth
         );
 
-        let r = attack(ctx, game_id, adventurer, dragon, adventurerHealth, dragonHealth);
+        let r = attack(ctx, adventurer, dragon, adventurerHealth, dragonHealth);
 
         r
     }
 
     fn attack_action(
         ctx: Context,
-        game_id: u32,
         attacker: felt252,
         defender: felt252,
-        attackerStrength: u8,
-        defenderDexterity: u8,
-        attackerLevel: u8,
-        defenderLevel: u8,
-        attackerHealth: u8,
-        defenderHealth: u8,
-    ) -> (u8, u8) {
-        let roll_d20 = roll_dice(ctx, game_id, 8);
-        let damage = damage(ctx, game_id, attackerStrength);
+        attackerStrength: u32,
+        defenderDexterity: u32,
+        attackerLevel: u32,
+        defenderLevel: u32,
+        attackerHealth: u32,
+        defenderHealth: u32,
+    ) -> (u32, u32) {
+        let roll_d20 = roll_dice(8);
+        let damage = damage(attackerStrength);
 
         if roll_d20 == 20 {
             let damage = damage * 2;
@@ -216,7 +220,7 @@ mod Adventuring {
 
     // TODO: can't update state out of excute function
     // TODO: use VRF insted
-    fn roll_dice(ctx: Context, game_id: u32, x: u8) -> u8 {
+    fn roll_dice(x: u32) -> u32 {
         let a: u128 = 1664525_u128;
         let c: u128 = 1013904223_u128;
         let m: u128 = pow(2_u128, 32_u128);
@@ -225,34 +229,34 @@ mod Adventuring {
 
         let r: u128 = seed % x.into();
         let r_felt: felt252 = r.into();
-        let result: u8 = r_felt.try_into().unwrap();
+        let result: u32 = r_felt.try_into().unwrap();
         result
     }
 
-    fn damage(ctx: Context, game_id: u32, str: u8) -> u8 {
+    fn damage(str: u32) -> u32 {
         
         let modifer = ability_modifier(str);
-        let r = roll_dice(ctx, game_id, 6);
+        let r = roll_dice(6);
 
         modifer + r
     }
 
     // calculate the ability modifer 
-    fn ability_modifier(score: u8) -> u8 {
+    fn ability_modifier(score: u32) -> u32 {
         let q = score / 2;
 
         q - 4
     }
     // get attack bonus
     // increases by 1 for each level
-    fn attack_bonus(str: u8, level: u8, roll_d20: u8) -> u8 {
+    fn attack_bonus(str: u32, level: u32, roll_d20: u32) -> u32 {
         let modifer = ability_modifier(str);
         roll_d20 + modifer + level
     }
 
     // get armor class
     // increases by 1 for every 5 levels
-    fn armor_class(dex: u8, level: u8) -> u8 {
+    fn armor_class(dex: u32, level: u32) -> u32 {
         let modifer = ability_modifier(dex);
         let q = level / 5;
 
