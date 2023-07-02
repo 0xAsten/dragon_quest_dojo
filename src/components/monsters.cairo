@@ -1,13 +1,13 @@
 #[derive(Component, Copy, Drop, Serde)]
 struct Dragon {
-    Health: u8,
-    Level: u8,
+    health: u8,
+    level: u8,
     // Physical
-    Strength: u8,
-    Dexterity: u8,
-    Vitality: u8,
-    // Mental
-    Intelligence: u8,
-    Wisdom: u8,
-    Charisma: u8,
+    strength: u8,
+    dexterity: u8,
+// vitality: u8,
+// Mental
+// intelligence: u8,
+// wisdom: u8,
+// charisma: u8,
 }
