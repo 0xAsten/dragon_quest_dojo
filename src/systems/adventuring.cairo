@@ -75,16 +75,16 @@ mod Adventuring {
     const DRAGON: felt252 = 'dragon';
 
     #[derive(Drop, Serde)]
-    struct PlayerAttacked {
-        game_id: u32,
-        player_id: felt252,
-        opponent_id: felt252,
+    struct Attacked {
+        attacker: felt252,
+        defender: felt252,
         damage: u8,
+        attackerHealth: u8,
+        defenderHealth: u8,
     }
 
     #[derive(Drop, Serde)]
     struct GameOver {
-        game_id: u32,
         winner: felt252,
         loser: felt252,
     }
@@ -109,30 +109,40 @@ mod Adventuring {
         // pseudorandom number generator seed, use VRF for seed in the future
         let seed = starknet::get_tx_info().unbox().transaction_hash;
 
-        attack(adventurer, dragon, adventurer.health, dragon.health);
-    // let mut values = array::ArrayTrait::new();
-    // serde::Serde::serialize(
-    //     @PlayerAttacked { game_id, player_id, opponent_id, action, damage }, ref values
-    // );
-    // emit(ctx, 'PlayerAttacked', values.span());
+        attack(ctx, adventurer, dragon, adventurer.health, dragon.health);
+        
     }
 
     fn attack(
+        ctx: Context,
         adventurer: Adventurer,
         dragon: Dragon,
         adventurerHealth: u8,
         dragonHealth: u8,
     ) -> felt252 {
         if adventurerHealth <= 0_u8 {
+            let mut values = array::ArrayTrait::new();
+            serde::Serde::serialize(
+                @GameOver { winner: DRAGON, loser: ADVENTURER}, ref values
+            );
+            emit(ctx, 'GameOver', values.span());
+            
             return DRAGON;
         };
 
         if dragonHealth <= 0_u8 {
+            let mut values = array::ArrayTrait::new();
+            serde::Serde::serialize(
+                @GameOver { winner: ADVENTURER, loser: DRAGON }, ref values
+            );
+            emit(ctx, 'GameOver', values.span());
+
             return ADVENTURER;
         };
 
         // attack
         let (adventurerHealth, dragonHealth) = attack_action(
+            ctx,
             ADVENTURER,
             DRAGON,
             adventurer.strength,
@@ -145,6 +155,7 @@ mod Adventuring {
 
         // defend
         let (dragonHealth, adventurerHealth) = attack_action(
+            ctx,
             DRAGON,
             ADVENTURER,
             dragon.strength,
@@ -155,12 +166,13 @@ mod Adventuring {
             adventurerHealth
         );
 
-        let r = attack(adventurer, dragon, adventurerHealth, dragonHealth);
+        let r = attack(ctx, adventurer, dragon, adventurerHealth, dragonHealth);
 
         r
     }
 
     fn attack_action(
+        ctx: Context,
         attacker: felt252,
         defender: felt252,
         attackerStrength: u8,
@@ -176,8 +188,6 @@ mod Adventuring {
         if roll_d20 == 20 {
             let damage = damage * 2;
 
-            // emit log
-
             let defenderHealth = defenderHealth - damage * 5;
         } else {
             let ab = attack_bonus(attackerStrength, attackerLevel, roll_d20);
@@ -186,8 +196,13 @@ mod Adventuring {
             if ac < ab {
                 let defenderHealth = defenderHealth - damage * 5;
             };
-        // emit log
         };
+
+        let mut values = array::ArrayTrait::new();
+        serde::Serde::serialize(
+            @Attacked { attacker, defender, damage,  attackerHealth, defenderHealth}, ref values
+        );
+        emit(ctx, 'Attacked', values.span());
 
         (attackerHealth, defenderHealth)
     }
