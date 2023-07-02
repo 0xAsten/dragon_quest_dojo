@@ -99,15 +99,7 @@ mod Adventuring {
         let game = get !(ctx, game_sk, Game);
 
         // game condition checking
-        // assert(game.winner == 0, 'game already over or not start');
-
-        set !(
-            ctx,
-            game_sk,
-            (Game {
-                adventurer: adventurer_id, dragon: 0, winner: 2
-            })
-        )
+        assert(game.winner == 0, 'game already over or not start');
 
         let adventurer_sk: Query = (game_id, adventurer_id).into();
         let adventurer = get !(ctx, adventurer_sk, Adventurer);
@@ -130,7 +122,7 @@ mod Adventuring {
             ctx,
             game_sk,
             (Game {
-                adventurer: adventurer_id, dragon: 0, winner: 1
+                adventurer: adventurer_id, dragon: 0, winner: winner
             })
         )
         
@@ -193,8 +185,9 @@ mod Adventuring {
         attackerHealth: u32,
         defenderHealth: u32,
     ) -> (u32, u32) {
-        let roll_d20 = roll_dice(8);
-        let damage = damage(attackerStrength);
+        let defenderHealth = defenderHealth - 1;
+        let roll_d20 = roll_dice(20);
+        let damage = cal_damage(attackerStrength);
 
         if roll_d20 == 20 {
             let damage = damage * 2;
@@ -230,10 +223,10 @@ mod Adventuring {
         let r: u128 = seed % x.into();
         let r_felt: felt252 = r.into();
         let result: u32 = r_felt.try_into().unwrap();
-        result
+        result + 1
     }
 
-    fn damage(str: u32) -> u32 {
+    fn cal_damage(str: u32) -> u32 {
         
         let modifer = ability_modifier(str);
         let r = roll_dice(6);

@@ -1,4 +1,4 @@
-const ADVENTURER_HEALTH: u32 = 10100;
+const ADVENTURER_HEALTH: u32 = 100;
 const ADVENTURER_LELVE: u32 = 1;
 const ADVENTURER_STR: u32 = 8;
 const ADVENTURER_DEX: u32 = 8;
@@ -7,7 +7,7 @@ const ADVENTURER_INT: u32 = 8;
 const ADVENTURER_WIS: u32 = 8;
 const ADVENTURER_CHA: u32 = 8;
 
-const DRAGON_HEALTH: u32 = 10200;
+const DRAGON_HEALTH: u32 = 200;
 const DRAGON_LELVE: u32 = 4;
 const DRAGON_STR: u32 = 16;
 const DRAGON_DEX: u32 = 16;
