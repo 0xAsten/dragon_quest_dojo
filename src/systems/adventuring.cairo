@@ -2,19 +2,20 @@
 mod InitQuest {
     use array::ArrayTrait;
     use traits::Into;
+    use box::BoxTrait;
 
     use dragon_quest_dojo::events::emit;
     use dragon_quest_dojo::components::game::{Game};
-    use dragon_quest_dojo::components::adventurer::{Adventurer};
+    use dragon_quest_dojo::components::adventurers::{Adventurer};
     use dragon_quest_dojo::components::monsters::{Dragon};
     use dragon_quest_dojo::constants::{
-        ADVENTURER_HEALTH, ADVENTURER_LELVE, ADVENTURER_STR, DRAGON_HEALTH, DRAGON_LELVE, DRAGON_STR
+        ADVENTURER_HEALTH, ADVENTURER_LELVE, ADVENTURER_STR, ADVENTURER_DEX, DRAGON_HEALTH, DRAGON_LELVE, DRAGON_STR, DRAGON_DEX
     };
 
     #[derive(Drop, Serde)]
     struct QuestInitiated {
         game_id: u32,
-        creator: felt252
+        creator: felt252,
     }
 
     fn execute(ctx: Context) {
@@ -29,7 +30,7 @@ mod InitQuest {
             ctx,
             game_id.into(),
             (Game {
-                adventurer: adventurer_id, dragon: 0, next_to_move: 0, num_moves: 0, winner: 0, 
+                adventurer: adventurer_id, dragon: 0, winner: 0
             })
         )
 
@@ -37,14 +38,14 @@ mod InitQuest {
         set !(
             ctx,
             (game_id, adventurer_id).into(),
-            (Adventurer { health: MAX_HEALTH, level: ADVENTURER_LELVE, strength: ADVENTURER_STR })
+            (Adventurer { health: ADVENTURER_HEALTH, level: ADVENTURER_LELVE, strength: ADVENTURER_STR, dexterity: ADVENTURER_DEX })
         )
 
         // init dragon entity
         set !(
             ctx,
-            (game_id, dragon_id).into(),
-            (Dragon { health: DRAGON_HEALTH, level: DRAGON_LELVE, strength: DRAGON_STR })
+            (game_id, 0).into(),
+            (Dragon { health: DRAGON_HEALTH, level: DRAGON_LELVE, strength: DRAGON_STR, dexterity: DRAGON_DEX })
         )
 
         let mut values = array::ArrayTrait::new();
@@ -64,7 +65,7 @@ mod Adventuring {
 
     use dragon_quest_dojo::events::emit;
     use dragon_quest_dojo::components::game::{Game};
-    use dragon_quest_dojo::components::adventurer::{Adventurer};
+    use dragon_quest_dojo::components::adventurers::{Adventurer};
     use dragon_quest_dojo::components::monsters::{Dragon};
     use dragon_quest_dojo::constants::{
         ADVENTURER_HEALTH, ADVENTURER_LELVE, ADVENTURER_STR, DRAGON_HEALTH, DRAGON_LELVE, DRAGON_STR
@@ -107,7 +108,6 @@ mod Adventuring {
 
         // pseudorandom number generator seed, use VRF for seed in the future
         let seed = starknet::get_tx_info().unbox().transaction_hash;
-        set !(ctx, 'seed', seed.into());
 
         attack(adventurer, dragon, adventurer.health, dragon.health);
     // let mut values = array::ArrayTrait::new();
@@ -118,18 +118,18 @@ mod Adventuring {
     }
 
     fn attack(
-        adventurer: @Adventurer,
-        dragon: @Dragon,
+        adventurer: Adventurer,
+        dragon: Dragon,
         adventurerHealth: u8,
         dragonHealth: u8,
     ) -> felt252 {
-        if adventurerHealth <= 0 {
-            DRAGON
+        if adventurerHealth <= 0_u8 {
+            return DRAGON;
         };
 
-        if dragonHealth <= 0 {
-            ADVENTURER
-        }
+        if dragonHealth <= 0_u8 {
+            return ADVENTURER;
+        };
 
         // attack
         let (adventurerHealth, dragonHealth) = attack_action(
@@ -145,7 +145,6 @@ mod Adventuring {
 
         // defend
         let (dragonHealth, adventurerHealth) = attack_action(
-            count,
             DRAGON,
             ADVENTURER,
             dragon.strength,
@@ -170,24 +169,22 @@ mod Adventuring {
         defenderLevel: u8,
         attackerHealth: u8,
         defenderHealth: u8,
-    ) -> (felt252, felt252) {
+    ) -> (u8, u8) {
         let roll_d20 = roll_dice(8);
         let damage = damage(attackerStrength);
 
         if roll_d20 == 20 {
-            damage = damage * 2;
+            let damage = damage * 2;
 
             // emit log
 
-            defenderHealth = defenderHealth - damage * 5;
+            let defenderHealth = defenderHealth - damage * 5;
         } else {
             let ab = attack_bonus(attackerStrength, attackerLevel, roll_d20);
             let ac = armor_class(defenderDexterity, defenderLevel);
 
-            let is_hit = is_le(ac, ab);
-
             if ac < ab {
-                defenderHealth = defenderHealth - damage * 5;
+                let defenderHealth = defenderHealth - damage * 5;
             };
         // emit log
         };
@@ -196,18 +193,19 @@ mod Adventuring {
     }
 
     fn roll_dice(x: u8) -> u8 {
-        let a = 1664525
-        let c = 1013904223
-        let m = 2**32
+        // let a = 1664525;
+        // let c = 1013904223;
+        // let m = 2**32;
 
-        let meta_sk: Query = (game_id, 'meta').into();
-        let seed = get !(ctx, 'seed', u256)
+        // let meta_sk: Query = (game_id, 'meta').into();
+        // let seed = get !(ctx, 'seed', u256);
   
-        let result: u128 = seed.low % x.into();
+        // let result: u128 = seed.low % x.into();
 
-        set !(ctx, 'seed', (seed * a + c) % m);
+        // set !(ctx, 'seed', (seed * a + c) % m);
 
-        result.into()
+        // result.into()
+        0
     }
 
     fn damage(str: u8) -> u8 {
